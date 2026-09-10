@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pivot — NSE Swing Scanner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-0:#0A0B0D;
+    --bg-1:#111318;
+    --bg-2:#161920;
+    --line:#262A33;
+    --line-strong:#363B47;
+    --text-hi:#EDEBE4;
+    --text-mid:#A5A6AC;
+    --text-low:#6B6D76;
+    --gold:#D4A052;
+    --gold-dim:#8A6B3C;
+    --green:#3FA66B;
+    --green-bg:#132019;
+    --red:#D9534F;
+    --red-bg:#221514;
+    --font-mono:'IBM Plex Mono',monospace;
+    --font-sans:'Inter',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    background:var(--bg-0);
+    color:var(--text-hi);
+    font-family:var(--font-sans);
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--gold);color:var(--bg-0);}
+
+  /* ---- top bar ---- */
+  header{
+    border-bottom:1px solid var(--line);
+    background:var(--bg-1);
+    position:sticky;top:0;z-index:50;
+  }
+  .header-inner{
+    max-width:1180px;margin:0 auto;padding:18px 24px;
+    display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;
+  }
+  .brand{display:flex;align-items:baseline;gap:10px;}
+  .brand-mark{
+    font-family:var(--font-mono);font-weight:600;font-size:19px;letter-spacing:-0.02em;color:var(--text-hi);
+  }
+  .brand-mark span{color:var(--gold);}
+  .brand-tag{font-size:12px;color:var(--text-low);font-family:var(--font-mono);}
+  .header-meta{display:flex;gap:28px;align-items:center;flex-wrap:wrap;}
+  .meta-item{font-size:12px;color:var(--text-mid);font-family:var(--font-mono);white-space:nowrap;}
+  .meta-item b{color:var(--text-hi);font-weight:500;}
+  .regime-pill{
+    font-family:var(--font-mono);font-size:11px;padding:4px 10px;border-radius:3px;
+    border:1px solid var(--red);color:var(--red);background:var(--red-bg);
+    letter-spacing:0.03em;
+  }
+
+  main{max-width:1180px;margin:0 auto;padding:0 24px 80px;}
+
+  /* ---- disclosure banner ---- */
+  .disclosure{
+    margin-top:28px;
+    border:1px solid var(--line-strong);
+    border-left:2px solid var(--gold);
+    background:var(--bg-1);
+    padding:16px 20px;
+    font-size:13px;
+    color:var(--text-mid);
+    line-height:1.65;
+  }
+  .disclosure b{color:var(--text-hi);font-weight:500;}
+  .disclosure .label{
+    font-family:var(--font-mono);font-size:10px;letter-spacing:0.08em;color:var(--gold);
+    margin-bottom:8px;display:block;
+  }
+
+  /* ---- section headers ---- */
+  .section{margin-top:44px;}
+  .section-head{
+    display:flex;align-items:baseline;justify-content:space-between;
+    border-bottom:1px solid var(--line);
+    padding-bottom:12px;margin-bottom:20px;
+    flex-wrap:wrap;gap:8px;
+  }
+  .section-head h2{font-size:16px;font-weight:600;color:var(--text-hi);}
+  .section-head .count{font-family:var(--font-mono);font-size:12px;color:var(--text-low);}
+
+  /* ---- regime / sector grid ---- */
+  .regime-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);}
+  @media(max-width:760px){.regime-grid{grid-template-columns:1fr;}}
+  .regime-card{background:var(--bg-1);padding:22px 24px;}
+  .regime-card h3{font-size:12px;font-family:var(--font-mono);color:var(--text-low);letter-spacing:0.05em;margin-bottom:14px;}
+  .regime-headline{font-size:22px;font-weight:600;color:var(--red);margin-bottom:10px;}
+  .regime-body{font-size:13.5px;color:var(--text-mid);line-height:1.7;}
+  .regime-body b{color:var(--text-hi);font-weight:500;}
+  .idx-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);font-family:var(--font-mono);font-size:13px;}
+  .idx-row:last-child{border-bottom:none;}
+  .idx-name{color:var(--text-mid);}
+  .idx-val{color:var(--text-hi);font-weight:500;}
+  .idx-chg{margin-left:10px;}
+  .neg{color:var(--red);}
+  .pos{color:var(--green);}
+
+  /* ---- sector leadership ---- */
+  .sector-list{display:flex;flex-direction:column;}
+  .sector-row{
+    display:grid;grid-template-columns:22px 1fr auto auto;gap:14px;align-items:center;
+    padding:11px 0;border-bottom:1px solid var(--line);
+  }
+  .sector-row:last-child{border-bottom:none;}
+  .sector-rank{font-family:var(--font-mono);font-size:11px;color:var(--text-low);}
+  .sector-name{font-size:13.5px;color:var(--text-hi);font-weight:500;}
+  .sector-tag{
+    font-family:var(--font-mono);font-size:10px;padding:2px 7px;border-radius:2px;
+    letter-spacing:0.04em;white-space:nowrap;
+  }
+  .tag-leading{background:var(--green-bg);color:var(--green);border:1px solid #1F4A32;}
+  .tag-improving{background:#1A2233;color:#6FA3D8;border:1px solid #26364F;}
+  .tag-weak{background:var(--red-bg);color:var(--red);border:1px solid #4A2422;}
+  .sector-chg{font-family:var(--font-mono);font-size:13px;text-align:right;min-width:56px;}
+
+  /* ---- candidate cards ---- */
+  .candidates{display:flex;flex-direction:column;gap:14px;}
+  .cand-card{
+    border:1px solid var(--line);background:var(--bg-1);
+    padding:0;overflow:hidden;
+  }
+  .cand-top{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:16px 20px;gap:16px;flex-wrap:wrap;border-bottom:1px solid var(--line);
+  }
+  .cand-id{display:flex;align-items:center;gap:14px;}
+  .cand-ticker{font-family:var(--font-mono);font-weight:600;font-size:16px;color:var(--text-hi);}
+  .cand-name{font-size:12.5px;color:var(--text-low);}
+  .cand-score{
+    font-family:var(--font-mono);font-size:13px;color:var(--gold);
+    border:1px solid var(--gold-dim);padding:3px 9px;border-radius:2px;white-space:nowrap;
+  }
+  .cand-flags{display:flex;gap:6px;flex-wrap:wrap;}
+  .flag{
+    font-family:var(--font-mono);font-size:10px;padding:3px 8px;border-radius:2px;letter-spacing:0.03em;
+    background:#1A2233;color:#6FA3D8;border:1px solid #26364F;
+  }
+  .flag.risk{background:var(--red-bg);color:var(--red);border-color:#4A2422;}
+  .cand-body{padding:18px 20px;display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+  @media(max-width:640px){.cand-body{grid-template-columns:1fr;}}
+  .cand-col h4{
+    font-family:var(--font-mono);font-size:10px;color:var(--text-low);letter-spacing:0.06em;margin-bottom:10px;
+  }
+  .data-row{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;}
+  .data-row .k{color:var(--text-mid);}
+  .data-row .v{font-family:var(--font-mono);color:var(--text-hi);}
+  .v.na{color:var(--text-low);font-style:italic;}
+  .cand-note{
+    font-size:13px;color:var(--text-mid);line-height:1.65;padding:0 20px 18px;
+  }
+  .cand-note b{color:var(--text-hi);font-weight:500;}
+
+  /* ---- empty / placeholder state ---- */
+  .empty-slot{
+    border:1px dashed var(--line-strong);
+    padding:32px 20px;text-align:center;color:var(--text-low);font-size:13px;
+  }
+
+  /* ---- methodology footer ---- */
+  .methodology{
+    margin-top:44px;border-top:1px solid var(--line);padding-top:24px;
+  }
+  .method-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;}
+  @media(max-width:760px){.method-grid{grid-template-columns:1fr;}}
+  .method-col h4{font-size:12px;font-family:var(--font-mono);color:var(--gold);margin-bottom:10px;letter-spacing:0.03em;}
+  .method-col p, .method-col li{font-size:12.5px;color:var(--text-mid);line-height:1.7;}
+  .method-col ol,.method-col ul{padding-left:16px;}
+
+  footer{
+    max-width:1180px;margin:0 auto;padding:32px 24px 40px;
+    border-top:1px solid var(--line);margin-top:40px;
+    font-size:12px;color:var(--text-low);
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;
+  }
+  footer a{color:var(--text-mid);text-decoration:none;border-bottom:1px solid var(--line-strong);}
+  footer a:hover{color:var(--gold);border-color:var(--gold-dim);}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="brand">
+      <div class="brand-mark">PIVOT<span>·</span>NSE</div>
+      <div class="brand-tag">swing scanner</div>
+    </div>
+    <div class="header-meta">
+      <div class="meta-item">as of <b>09 Sep 2026, EOD</b></div>
+      <div class="meta-item">universe <b>NIFTY 500 (partial)</b></div>
+      <div class="regime-pill">CAUTIOUS / BEARISH</div>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <div class="disclosure" id="disclosure">
+    <span class="label">DATA SCOPE — READ BEFORE USING</span>
+    <span id="disclosure-text">Loading scan data…</span>
+  </div>
+
+  <section class="section">
+    <div class="section-head">
+      <h2>Market regime</h2>
+      <span class="count">step 1 of 9 — scanning hierarchy</span>
+    </div>
+    <div class="regime-grid">
+      <div class="regime-card">
+        <h3>CLASSIFICATION</h3>
+        <div class="regime-headline">CAUTIOUS → BEARISH</div>
+        <div class="regime-body">
+          Nifty 50 closed <b>down for a third straight session</b>, falling 0.86% to <b>23,431.50</b>
+          on 9 Sep 2026, as Brent crude crossed <b>$100/barrel</b> amid escalating US–Iran tensions.
+          Sensex fell 813 points (-1.08%) to 74,764. Weakness was broad — Nifty Midcap and Smallcap
+          both closed lower too, and Nifty IT dropped over 3%. The index is roughly <b>11% off its
+          52-week high</b> of 26,373.
+          <br><br>
+          Per scanner rules for a cautious/bearish tape: reduce candidate count, avoid chasing, and
+          only surface exceptional relative-strength names — flagged high-risk rather than ranked as
+          clean buys.
+        </div>
+      </div>
+      <div class="regime-card">
+        <h3>KEY LEVELS TODAY</h3>
+        <div class="idx-row"><span class="idx-name">Nifty 50</span><span><span class="idx-val">23,431.50</span><span class="idx-chg neg">-0.86%</span></span></div>
+        <div class="idx-row"><span class="idx-name">Sensex</span><span><span class="idx-val">74,764.23</span><span class="idx-chg neg">-1.08%</span></span></div>
+        <div class="idx-row"><span class="idx-name">Nifty Midcap</span><span><span class="idx-val">—</span><span class="idx-chg neg">-0.51%</span></span></div>
+        <div class="idx-row"><span class="idx-name">Nifty Smallcap</span><span><span class="idx-val">—</span><span class="idx-chg neg">-0.48%</span></span></div>
+        <div class="idx-row"><span class="idx-name">Nifty IT</span><span><span class="idx-val">—</span><span class="idx-chg neg">~-3.0%</span></span></div>
+        <div class="idx-row"><span class="idx-name">52w range (Nifty 50)</span><span class="idx-val">22,183 – 26,373</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <h2>Sector leadership</h2>
+      <span class="count">step 2 of 9 — leading sectors surveyed this run</span>
+    </div>
+    <div class="regime-grid" style="grid-template-columns:1fr;">
+      <div class="regime-card" style="padding:0;">
+        <div class="sector-list" style="padding:22px 24px;">
+          <div class="sector-row">
+            <span class="sector-rank">01</span>
+            <span class="sector-name">Metal &amp; Mining</span>
+            <span class="sector-tag tag-leading">LEADING</span>
+            <span class="sector-chg pos">+1.58%</span>
+          </div>
+          <div class="sector-row">
+            <span class="sector-rank">02</span>
+            <span class="sector-name">Pharmaceuticals</span>
+            <span class="sector-tag tag-improving">RS LEADER (LAGGING TAPE)</span>
+            <span class="sector-chg pos">52w high late Aug</span>
+          </div>
+          <div class="sector-row">
+            <span class="sector-rank">—</span>
+            <span class="sector-name">Information Technology</span>
+            <span class="sector-tag tag-weak">WEAKENING</span>
+            <span class="sector-chg neg">~-3.0%</span>
+          </div>
+          <div class="sector-row">
+            <span class="sector-rank">—</span>
+            <span class="sector-name">Realty</span>
+            <span class="sector-tag tag-weak">WEAKENING</span>
+            <span class="sector-chg neg">underperformed</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <h2>Candidates — watchlist for further validation</h2>
+      <span class="count" id="cand-count">loading…</span>
+    </div>
+
+    <div id="data-status" class="empty-slot" style="display:none;"></div>
+    <div class="candidates" id="candidates-list"></div>
+  </section>
+
+  <section class="section methodology">
+    <div class="section-head">
+      <h2>How this scan works</h2>
+    </div>
+    <div class="method-grid">
+      <div class="method-col">
+        <h4>SCANNING HIERARCHY</h4>
+        <p>Every candidate is walked through the same funnel, in order, before it can appear above:</p>
+        <ol>
+          <li>Market regime</li>
+          <li>Sector leadership</li>
+          <li>Relative strength (RS-20/50/100/200)</li>
+          <li>Stage analysis</li>
+          <li>Price structure (VCP, pivot, base)</li>
+          <li>Volume</li>
+          <li>Momentum</li>
+          <li>Breakout quality</li>
+          <li>Risk / reward</li>
+        </ol>
+      </div>
+      <div class="method-col">
+        <h4>SCORING</h4>
+        <p>
+          A 100-point Master Score is only awarded where real data supports it. Categories with
+          no reliable data are marked <b>N/A</b> and dropped from the score rather than defaulted
+          to zero — the total is then rescaled proportionally, and the dropped categories are
+          disclosed. A candidate with too many N/A categories to score meaningfully is left unscored,
+          as shown above, rather than assigned a misleading number.
+        </p>
+      </div>
+      <div class="method-col">
+        <h4>DAILY REFRESH WORKFLOW (MOBILE-FRIENDLY)</h4>
+        <p>
+          After market close (bhavcopy is usually live ~6:30–7:00 PM IST), open
+          <b>pivot_scanner.ipynb</b> in Colab and run it. It downloads the official NSE bhavcopy,
+          filters to the Nifty 500, pulls price history for shortlisted movers via yfinance, and
+          generates a complete, ready-to-open HTML file — today's scan is baked directly into the
+          page. Download that one file from Colab and open it. No separate JSON file, no server,
+          no CORS issues — works the same on mobile as on desktop.
+        </p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <span>Pivot is a research aid, not investment advice. Verify every figure before trading.</span>
+  <span>Rebuilt after each market close · not affiliated with NSE India</span>
+</footer>
+
+<script>
+(function () {
+  const disclosureText = document.getElementById('disclosure-text');
+  const candCount = document.getElementById('cand-count');
+  const candidatesList = document.getElementById('candidates-list');
+  const dataStatus = document.getElementById('data-status');
+
+  function fmtDate(iso) {
+    if (!iso) return 'unknown date';
+    const d = new Date(iso);
+    if (isNaN(d)) return iso;
+    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  }
+
+  function naSpan(label) {
+    return `<span class="v na">${label || 'N/A — data unavailable'}</span>`;
+  }
+
+  function renderCandidate(c) {
+    const t = c.technicals || {};
+    const s = c.score || {};
+    const chgClass = c.pct_chg >= 0 ? 'pos' : 'neg';
+    const chgSign = c.pct_chg >= 0 ? '+' : '';
+    const scoreDisplay = (s.rescaled_total !== null && s.rescaled_total !== undefined)
+      ? `SCORE — ${s.rescaled_total}/100`
+      : 'SCORE — N/A';
+
+    const flags = [];
+    if (t.vcp_signal) flags.push('<span class="flag">VCP CONTRACTION</span>');
+    if (t.price_vs_52w_high_pct !== null && Math.abs(t.price_vs_52w_high_pct) <= 1)
+      flags.push('<span class="flag">NEAR 52W HIGH</span>');
+    if (t.stage === 'Stage 2') flags.push('<span class="flag">STAGE 2</span>');
+    if (s.dropped_categories && s.dropped_categories.length >= 3)
+      flags.push('<span class="flag risk">LIMITED DATA</span>');
+
+    return `
+      <div class="cand-card">
+        <div class="cand-top">
+          <div class="cand-id">
+            <span class="cand-ticker">${c.symbol}</span>
+            <span class="cand-name">₹${c.close} · <span class="${chgClass}">${chgSign}${c.pct_chg}%</span> today</span>
+          </div>
+          <div class="cand-flags">${flags.join('')}</div>
+          <span class="cand-score">${scoreDisplay}</span>
+        </div>
+        <div class="cand-body">
+          <div class="cand-col">
+            <h4>PRICE STRUCTURE</h4>
+            <div class="data-row"><span class="k">Close</span><span class="v">₹${c.close}</span></div>
+            <div class="data-row"><span class="k">Off 52w high</span>${
+              t.price_vs_52w_high_pct !== null
+                ? `<span class="v ${t.price_vs_52w_high_pct >= -1 ? 'pos' : ''}">${t.price_vs_52w_high_pct}%</span>`
+                : naSpan()
+            }</div>
+            <div class="data-row"><span class="k">Stage</span><span class="v">${t.stage || 'Unclear'}</span></div>
+            <div class="data-row"><span class="k">VCP contraction</span><span class="v">${t.vcp_signal ? 'Yes' : 'No'}</span></div>
+            <div class="data-row"><span class="k">DMA 50 / 200</span>${
+              (t.dma50 && t.dma200) ? `<span class="v">₹${t.dma50} / ₹${t.dma200}</span>` : naSpan()
+            }</div>
+          </div>
+          <div class="cand-col">
+            <h4>VOLUME &amp; SCORE</h4>
+            <div class="data-row"><span class="k">Traded value</span><span class="v">₹${c.traded_value_cr} Cr</span></div>
+            <div class="data-row"><span class="k">Vol vs 20d avg</span>${
+              t.vol_vs_avg !== null ? `<span class="v">${t.vol_vs_avg}×</span>` : naSpan()
+            }</div>
+            <div class="data-row"><span class="k">DMA 50 slope</span><span class="v">${t.dma50_slope || 'N/A'}</span></div>
+            <div class="data-row"><span class="k">DMA 200 slope</span><span class="v">${t.dma200_slope || 'N/A'}</span></div>
+            <div class="data-row"><span class="k">Score basis</span><span class="v" style="font-size:11px;">${
+              s.points_available ? `${s.points_available}/50 pts available` : 'insufficient data'
+            }</span></div>
+          </div>
+        </div>
+        ${s.dropped_categories && s.dropped_categories.length ? `
+        <div class="cand-note">
+          <b>Not scored:</b> ${s.dropped_categories.join(', ')} — insufficient data this run, excluded
+          from the total rather than defaulted to zero.
+        </div>` : ''}
+      </div>`;
+  }
+
+  const FALLBACK_CANDIDATES_HTML = `
+    <div class="cand-card">
+      <div class="cand-top">
+        <div class="cand-id">
+          <span class="cand-ticker">TATASTEEL</span>
+          <span class="cand-name">Tata Steel Ltd — Metal</span>
+        </div>
+        <div class="cand-flags">
+          <span class="flag">SECTOR LEADER</span>
+          <span class="flag risk">RS UNCONFIRMED</span>
+        </div>
+        <span class="cand-score">SCORE — N/A</span>
+      </div>
+      <div class="cand-body">
+        <div class="cand-col">
+          <h4>PRICE STRUCTURE</h4>
+          <div class="data-row"><span class="k">LTP</span><span class="v">₹188.75</span></div>
+          <div class="data-row"><span class="k">52w high / low</span><span class="v">₹224.40 / ₹160.06</span></div>
+          <div class="data-row"><span class="k">Off high</span><span class="v neg">-15.9%</span></div>
+          <div class="data-row"><span class="k">Structure</span><span class="v">Breakout retest near ₹185–188</span></div>
+          <div class="data-row"><span class="k">Stage</span><span class="v na">N/A — data unavailable</span></div>
+        </div>
+        <div class="cand-col">
+          <h4>VOLUME &amp; RISK</h4>
+          <div class="data-row"><span class="k">Volume today</span><span class="v">3.97 Cr shares</span></div>
+          <div class="data-row"><span class="k">RS vs Nifty</span><span class="v na">N/A — data unavailable</span></div>
+          <div class="data-row"><span class="k">Delivery %</span><span class="v na">N/A — data unavailable</span></div>
+          <div class="data-row"><span class="k">R:R</span><span class="v na">N/A — needs manual stop/target</span></div>
+        </div>
+      </div>
+      <div class="cand-note">
+        <b>Why it's here:</b> Metal was the strongest sector on 9 Sep 2026 even as the broader
+        market fell, and Tata Steel is a repeatedly-named leader. <b>Caveat:</b> ~16% below its
+        52-week high — a retest-watch, not a fresh breakout. Confirm volume and DMA slope before
+        considering entry.
+      </div>
+    </div>
+    <div class="empty-slot">
+      Run the Colab bhavcopy scanner for a real, current, full Nifty 500 scan — see
+      "How this scan works" below for the notebook.
+    </div>`;
+
+  // ---- DATA: injected directly by the Colab notebook at generation time ----
+  // No fetch(), no separate JSON file, no server needed — this works by
+  // just opening the file, including on mobile browsers.
+  const PIVOT_DATA = {
+  "generated_at": "2026-09-10T01:41:51.001958",
+  "bhavcopy_date": "2026-09-09",
+  "universe_size": 501,
+  "liquid_universe_size": 481,
+  "shortlisted_count": 60,
+  "scored_count": 60,
+  "candidates": [
+    {
+      "symbol": "GRAPHITE",
+      "close": 844.65,
+      "pct_chg": 15.04,
+      "traded_value_cr": 3060.96,
+      "technicals": {
+        "dma20": 724.1,
+        "dma50": 678.54,
+        "dma100": 686.08,
+        "dma200": 651.12,
+        "dma50_slope": "rising",
+        "dma200_slope": "rising",
+        "stage": "Stage 2",
+        "price_vs_52w_high_pct": 0.0,
+        "vcp_signal": false,
+        "avg_vol_20d": 2828673,
+        "vol_vs_avg": 12.83
+      },
+      "score": {
+        "raw_scores": {
+          "stage": 15,
+          "structure": 15,
+          "volume": 10,
+          "trend": 10
+        },
+        "points_available": 50,
+        "points_possible_if_scored": 50,
+        "rescaled_total": 100.0,
+        "dropped_categories": []
+      }
+    },
+    {
+      "symbol": "CHENNPETRO",
+      "close": 1604.4,
+      "pct_chg": 10.06,
+      "traded_value_cr": 1315.66,
+      "technicals": {
+        "dma20": 1405.46,
+        "dma50": 1268.8,
+        "dma100": 1159.55,
+        "dma200": 1015.62,
+        "dma50_slope": "rising",
+        "dma200_slope": "rising",
+        "stage": "Stage 2",
+        "price_vs_52w_high_pct": 0.0,
+        "vcp_signal": false,
+        "avg_vol_20d": 1961890,
+        "vol_vs_avg": 4.28
+      },
+      "score": {
+        "raw_scores": {
+          "stage": 15,
+          "structure": 15,
+          "volume": 10,
+          "trend": 10
+        },
+        "points_available": 50,
+        "points_possible_if_scored": 50,
+        "rescaled_total": 100.0,
+        "dropped_categories": []
+      }
+    },
+    {
+      "symbol": "GLAND",
+      "close": 3026.2,
+      "pct_chg": 2.26,
+      "traded_value_cr": 468.04,
+      "technicals": {
+        "dma20": 2895.37,
+        "dma50": 2661.99,
+        "dma100": 2384.11,
+        "dma200": 2053.08,
+        "dma50_slope": "rising",
+        "dma200_slope": "rising",
+        "stage": "Stage 2",
+        "price_vs_52w_high_pct": 0.0,
+        "vcp_signal": true,
+        "avg_vol_20d": 623639,
+        "vol_vs_avg": 2.5
+      },
+      "score": {
+        "raw_scores": {
+          "stage": 15,
+          "structure": 15,
+          "volume": 10,
+          "trend": 10
+        },
+        "points_available": 50,
+        "points_possible_if_scored": 50,
+        "rescaled_total": 100.0,
+        "dropped_categories": []
+      }
+    },
+    {
+      "symbol": "ADANIENT",
+      "close": 3104.7,
+      "pct_chg": 5.13,
+      "traded_value_cr": 1640.67,
+      "technicals": {
+        "dma20": 3000.59,
+        "dma50": 3054.19,
+        "dma100": 2915.43,
+        "dma200": 2523.56,
+        "dma50_slope": "rising",
+        "dma200_slope": "rising",
+        "stage": "Stage 2",
+        "price_vs_52w_high_pct": -3.34,
+        "vcp_signal": false,
+        "avg_vol_20d": 2092183,
+        "vol_vs_avg": 2.54
+      },
+      "score": {
+        "raw_scores": {
+          "stage": 15,
+          "structure": 11.0,
+          "volume": 10,
+          "trend": 10
+        },
+        "points_available": 50,
+        "points_possible_if_scored": 50,
+        "rescaled_total": 92.0,
+        "dropped_categories": []
+      }
+    },
+    {
+      "symbol": "APOLLOHOSP",
+      "close": 8967.0,
+      "pct_chg": 1.47,
+      "traded_value_cr": 335.59,
+      "technicals": {
+        "dma20": 8771.65,
+        "dma50": 8825.07,
+        "dma100": 8498.5,
+        "dma200": 7902.67,
+        "dma50_slope": "rising",
+        "dma200_slope": "rising",
+        "stage": "Stage 2",
+        "price_vs_52w_high_pct": -0.8,
+        "vcp_signal": true,
+        "avg_vol_20d": 389224,
+        "vol_vs_avg": 0.96
+      },
+      "score": {
+        "raw_scores": {
+          "stage": 15,
+          "structure": 15,
+          "volume": 3.8,
+          "trend": 10
+        },
+        "points_available": 50,
+        "points_possible_if_scored": 50,
+        "rescaled_total": 87.7,
+        "dropped_categories": []
+      }
+    },
+    {
+      "symbol": "DIVISLAB",
+      "close": 9488.0,
+      "pct_chg": -0.91,
+      "traded_value_cr": 365.48,
+      "technicals": {
+        "dma20": 8945.9,
+        "dma50": 8088.94,
+        "dma100": 7364.07,
+        "dma200": 6796.99,
+        "dma50_slope": "rising",
+        "dma200_slope": "rising",
+        "stage": "Stage 2",
+        "price_vs_52w_high_pct": -0.91,
+        "vcp_signal": false,
+        "avg_vol_20d": 438297,
+        "vol_vs_avg": 0.88
+      },
+      "score": {
+        "raw_scores": {
+          "stage": 15,
+          "structure": 15,
+          "volume": 3.5,
+          "trend": 10
+        },
+        "points_available": 50,
+        "points_possible_if_scored": 50,
+        "rescaled_total": 87.0,
+        "dropped_categories": []
+      }
+    },
+    {
+      "symbol": "BHEL",
+      "close": 433.7,
+      "pct_chg": 2.74,
+      "traded_value_cr": 365.74,
+      "technicals": {
+        "dma20": 424.73,
+        "dma50": 413.3,
+        "dma100": 402.55,
+        "dma200": 336.58,
+        "dma50_slope": "rising",
+        "dma200_slope": "rising",
+        "stage": "Stage 2",
+        "price_vs_52w_high_pct": -2.02,
+        "vcp_signal": false,
+        "avg_vol_20d": 7604008,
+        "vol_vs_avg": 1.12
+      },
+      "score": {
+        "raw_scores": {
+          "stage": 15,
+          "structure": 12.6,
+          "volume": 5.6,
+          "trend": 10
+        },
+        "points_available": 50,
+        "points_possible_if_scored": 50,
+        "rescaled_total": 86.4,
+        "dropped_categories": []
+      }
+    },
+    {
+      "symbol": "LAURUSLABS",
+      "close": 1937.0,
+      "pct_chg": -0.51,
+      "traded_value_cr": 352.82,
+      "technicals": {
+        "dma20": 1859.83,
+        "dma50": 1733.51,
+        "dma100": 1527.48,
+        "dma200": 1280.74,
+        "dma50_slope": "rising",
+        "dma200_slope": "rising",
+        "stage": "Stage 2",
+        "price_vs_52w_high_pct": -0.51,
+        "vcp_signal": false,
+        "avg_vol_20d": 3532745,
+        "vol_vs_avg": 0.52
+      },
+      "score": {
+        "raw_scores": {
+          "stage": 15,
+          "structure": 15,
+          "volume": 2.1,
+          "trend": 10
+        },
+        "points_available": 50,
+        "points_possible_if_scored": 50,
+        "rescaled_total": 84.2,
+        "dropped_categories": []
+      }
+    },
+    {
+      "symbol": "MCX",
+      "close": 3350.0,
+      "pct_chg": 0.24,
+      "traded_value_cr": 730.03,
+      "technicals": {
+        "dma20": 3200.73,
+        "dma50": 2932.53,
+        "dma100": 2958.45,
+        "dma200": 2658.97,
+        "dma50_slope": "rising",
+        "dma200_slope": "rising",
+        "stage": "Stage 2",
+        "price_vs_52w_high_pct": -2.43,
+        "vcp_signal": false,
+        "avg_vol_20d": 2386863,
+        "vol_vs_avg": 0.91
+      },
+      "score": {
+        "raw_scores": {
+          "stage": 15,
+          "structure": 12.1,
+          "volume": 3.6,
+          "trend": 10
+        },
+        "points_available": 50,
+        "points_possible_if_scored": 50,
+        "rescaled_total": 81.4,
+        "dropped_categories": []
+      }
+    },
+    {
+      "symbol": "NATIONALUM",
+      "close": 377.6,
+      "pct_chg": 1.77,
+      "traded_value_cr": 347.18,
+      "technicals": {
+        "dma20": 384.13,
+        "dma50": 367.46,
+        "dma100": 380.98,
+        "dma200": 363.31,
+        "dma50_slope": "rising",
+        "dma200_slope": "rising",
+        "stage": "Stage 2",
+        "price_vs_52w_high_pct": -13.83,
+        "vcp_signal": false,
+        "avg_vol_20d": 6082771,
+        "vol_vs_avg": 1.5
+      },
+      "score": {
+        "raw_scores": {
+          "stage": 15,
+          "structure": 6,
+          "volume": 7.5,
+          "trend": 10
+        },
+        "points_available": 50,
+        "points_possible_if_scored": 50,
+        "rescaled_total": 77.0,
+        "dropped_categories": []
+      }
+    },
+    {
+      "symbol": "BIOCON",
+      "close": 395.0,
+      "pct_chg": 0.69,
+      "traded_value_cr": 408.66,
+      "technicals": {
+        "dma20": 408.65,
+        "dma50": 419.6,
+        "dma100": 412.9,
+        "dma200": 395.56,
+        "dma50_slope": "rising",
+        "dma200_slope": "rising",
+        "stage": "Unclear",
+        "price_vs_52w_high_pct": -10.37,
+        "vcp_signal": false,
+        "avg_vol_20d": 2931338,
+        "vol_vs_avg": 3.5
+      },
+      "score": {
+        "raw_scores": {
+          "structure": 6,
+          "volume": 10,
+          "trend": 10
+        },
+        "points_available": 35,
+        "points_possible_if_scored": 50,
+        "rescaled_total": 74.3,
+        "dropped_categories": [
+          "stage"
+        ]
+      }
+    },
+    {
+      "symbol": "PAYTM",
+      "close": 1751.5,
+      "pct_chg": 4.88,
+      "traded_value_cr": 1432.4,
+      "technicals": {
+        "dma20": 1644.15,
+        "dma50": 1460.34,
+        "dma100": 1286.85,
+        "dma200": 1238.39,
+        "dma50_slope": "rising",
+        "dma200_slope": "falling",
+        "stage": "Stage 3",
+        "price_vs_52w_high_pct": 0.0,
+        "vcp_signal": false,
+        "avg_vol_20d": 3979421,
+        "vol_vs_avg": 2.07
+      },
+      "score": {
+        "raw_scores": {
+          "stage": 5,
+          "structure": 15,
+          "volume": 10,
+          "trend": 5
+        },
+        "points_available": 50,
+        "points_possible_if_scored": 50,
+        "rescaled_total": 70.0,
+        "dropped_categories": []
+      }
+    },
+    {
+      "symbol": "NETWEB",
+      "close": 4898.5,
+      "pct_chg": -3.71,
+      "traded_value_cr": 838.37,
+      "technicals": {
+        "dma20": 5207.87,
+        "dma50": 4746.04,
+        "dma100": 4537.72,
+        "dma200": 3904.74,
+        "dma50_slope": "rising",
+        "dma200_slope": "rising",
+        "stage": "Stage 2",
+        "price_vs_52w_high_pct": -12.54,
+        "vcp_signal": false,
+        "avg_vol_20d": 2098348,
+        "vol_vs_avg": 0.81
+      },
+      "score": {
+        "raw_scores": {
+          "stage": 15,
+          "structure": 6,
+          "volume": 3.2,
+          "trend": 10
+        },
+        "points_available": 50,
+        "points_possible_if_scored": 50,
+        "rescaled_total": 68.5,
+        "dropped_categories": []
+      }
+    },
+    {
+      "symbol": "FINCABLES",
+      "close": 1353.4,
+      "pct_chg": 3.92,
+      "traded_value_cr": 388.39,
+      "technicals": {
+        "dma20": 1263.34,
+        "dma50": 1122.49,
+        "dma100": 1091.57,
+        "dma200": 943.72,
+        "dma50_slope": "rising",
+        "dma200_slope": "rising",
+        "stage": "Unclear",
+        "price_vs_52w_high_pct": NaN,
+        "vcp_signal": false,
+        "avg_vol_20d": 1086105,
+        "vol_vs_avg": 2.64
+      },
+      "score": {
+        "raw_scores": {
+          "structure": 2,
+          "volume": 10,
+          "trend": 10
+        },
+        "points_available": 35,
+        "points_possible_if_scored": 50,
+        "rescaled_total": 62.9,
+        "dropped_categories": [
+          "stage"
+        ]
+      }
+    },
+    {
+      "symbol": "ICICIBANK",
+      "close": 1389.1,
+      "pct_chg": -0.74,
+      "traded_value_cr": 1981.77,
+      "technicals": {
+        "dma20": 1420.31,
+        "dma50": 1420.14,
+        "dma100": 1351.1,
+        "dma200": 1346.46,
+        "dma50_slope": "rising",
+        "dma200_slope": "falling",
+        "stage": "Stage 1 / transitioning",
+        "price_vs_52w_high_pct": -4.86,
+        "vcp_signal": false,
+        "avg_vol_20d": 8922216,
+        "vol_vs_avg": 1.59
+      },
+      "score": {
+        "raw_scores": {
+          "stage": 9,
+          "structure": 9.2,
+          "volume": 8.0,
+          "trend": 5
+        },
+        "points_available": 50,
+        "points_possible_if_scored": 50,
+        "rescaled_total": 62.2,
+        "dropped_categories": []
+      }
+    },
+    {
+      "symbol": "IDEA",
+      "close": 15.52,
+      "pct_chg": 0.65,
+      "traded_value_cr": 837.41,
+      "technicals": {
+        "dma20": 14.52,
+        "dma50": 13.87,
+        "dma100": 13.53,
+        "dma200": 12.0,
+        "dma50_slope": "falling",
+        "dma200_slope": "rising",
+        "stage": "Stage 3",
+        "price_vs_52w_high_pct": -0.51,
+        "vcp_signal": false,
+        "avg_vol_20d": 440828069,
+        "vol_vs_avg": 1.22
+      },
+      "score": {
+        "raw_scores": {
+          "stage": 5,
+          "structure": 15,
+          "volume": 6.1,
+          "trend": 5
+        },
+        "points_available": 50,
+        "points_possible_if_scored": 50,
+        "rescaled_total": 62.2,
+        "dropped_categories": []
+      }
+    },
+    {
+      "symbol": "HINDCOPPER",
+      "close": 532.3,
+      "pct_chg": -0.1,
+      "traded_value_cr": 812.62,
+      "technicals": {
+        "dma20": 541.01,
+        "dma50": 515.76,
+        "dma100": 526.34,
+        "dma200": 516.89,
+        "dma50_slope": "rising",
+        "dma200_slope": "rising",
+        "stage": "Stage 2",
+        "price_vs_52w_high_pct": -29.85,
+        "vcp_signal": true,
+        "avg_vol_20d": 16432805,
+        "vol_vs_avg": 0.92
+      },
+      "score": {
+        "raw_scores": {
+          "stage": 15,
+          "structure": 2,
+          "volume": 3.7,
+          "trend": 10
+        },
+        "points_available": 50,
+        "points_possible_if_scored": 50,
+        "rescaled_total": 61.4,
+        "dropped_categories": []
+      }
+    },
+    {
+      "symbol": "HINDZINC",
+      "close": 605.4,
+      "pct_chg": 1.66,
+      "traded_value_cr": 380.88,
+      "technicals": {
+        "dma20": 590.33,
+        "dma50": 563.16,
+        "dma100": 579.95,
+        "dma200": 576.73,
+        "dma50_slope": "rising",
+        "dma200_slope": "rising",
+        "stage": "Stage 2",
+        "price_vs_52w_high_pct": -15.23,
+        "vcp_signal": false,
+        "avg_vol_20d": 6841437,
+        "vol_vs_avg": 0.92
+      },
+      "score": {
+        "raw_scores": {
+          "stage": 15,
+          "structure": 2,
+          "volume": 3.7,
+          "trend": 10
+        },
+        "points_available": 50,
+        "points_possible_if_scored": 50,
+        "rescaled_total": 61.4,
+        "dropped_categories": []
+      }
+    },
+    {
+      "symbol": "HAL",
+      "close": 5000.5,
+      "pct_chg": -0.61,
+      "traded_value_cr": 842.75,
+      "technicals": {
+        "dma20": 4929.84,
+        "dma50": 4710.12,
+        "dma100": 4547.35,
+        "dma200": 4362.73,
+        "dma50_slope": "rising",
+        "dma200_slope": "falling",
+        "stage": "Stage 3",
+        "price_vs_52w_high_pct": -1.93,
+        "vcp_signal": true,
+        "avg_vol_20d": 1066011,
+        "vol_vs_avg": 1.57
+      },
+      "score": {
+        "raw_scores": {
+          "stage": 5,
+          "structure": 12.7,
+          "volume": 7.8,
+          "trend": 5
+        },
+        "points_available": 50,
+        "points_possible_if_scored": 50,
+        "rescaled_total": 61.1,
+        "dropped_categories": []
+      }
+    },
+    {
+      "symbol": "LT",
+      "close": 3922.6,
+      "pct_chg": -0.6,
+      "traded_value_cr": 1175.33,
+      "technicals": {
+        "dma20": 4031.34,
+        "dma50": 3969.49,
+        "dma100": 3993.44,
+        "dma200": 3960.02,
+        "dma50_slope": "falling",
+        "dma200_slope": "rising",
+        "stage": "Unclear",
+        "price_vs_52w_high_pct": -10.35,
+        "vcp_signal": false,
+        "avg_vol_20d": 1338210,
+        "vol_vs_avg": 2.21
+      },
+      "score": {
+        "raw_scores": {
+          "structure": 6,
+          "volume": 10,
+          "trend": 5
+        },
+        "points_available": 35,
+        "points_possible_if_scored": 50,
+        "rescaled_total": 60.0,
+        "dropped_categories": [
+          "stage"
+        ]
+      }
+    }
+  ]
+};
+
+  function loadData() {
+    if (PIVOT_DATA === null) {
+      disclosureText.innerHTML = `
+        No scan data embedded in this file yet — showing manual research notes from
+        the last chat-based scan instead. Run the Colab notebook and download the
+        generated HTML file to see a real automated Nifty 500 scan here.
+      `;
+      candCount.textContent = 'manual notes only';
+      candidatesList.innerHTML = FALLBACK_CANDIDATES_HTML;
+      return;
+    }
+
+    const data = PIVOT_DATA;
+    disclosureText.innerHTML = `
+      Live scan generated <b>${fmtDate(data.generated_at)}</b> from NSE bhavcopy dated
+      <b>${fmtDate(data.bhavcopy_date)}</b>. Universe: <b>${data.universe_size || '—'}</b> Nifty 500
+      constituents → <b>${data.liquid_universe_size || '—'}</b> passed the liquidity filter →
+      <b>${data.shortlisted_count || '—'}</b> shortlisted for deep history →
+      <b>${data.scored_count || 0}</b> fully scored below. This is a real automated scan, not
+      investment advice — verify before trading.
+    `;
+
+    candCount.textContent = `${data.candidates ? data.candidates.length : 0} scored`;
+
+    if (!data.candidates || data.candidates.length === 0) {
+      candidatesList.innerHTML = `
+        <div class="empty-slot">
+          The scan ran but nothing scored highly enough to surface. That's a valid result on a
+          weak or choppy tape — check the market regime above before assuming something's broken.
+        </div>`;
+    } else {
+      candidatesList.innerHTML = data.candidates.map(renderCandidate).join('');
+    }
+  }
+
+  loadData();
+})();
+</script>
+
+</body>
+</html>
